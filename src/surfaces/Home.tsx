@@ -39,6 +39,7 @@ export default function Home() {
     if (value === 'letter') {
       if (ritualStarted.current) return
       ritualStarted.current = true
+      localStorage.removeItem('letter_a_identity')
       setPhase('flash')
       addTimer(() => {
         setPhase('ritual')

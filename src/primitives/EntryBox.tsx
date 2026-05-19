@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 
 interface EntryBoxProps {
-  variant: 'drawer' | 'memory'
+  variant: 'drawer' | 'memory' | 'carve'
   onSubmit: (content: string) => Promise<{ error: any }>
   author?: 'a' | 'b'
 }
@@ -38,9 +38,15 @@ export default function EntryBox({ variant, onSubmit, author }: EntryBoxProps) {
   }
 
   const isA = author === 'a'
-  const styleClasses = variant === 'drawer'
-    ? (author ? (isA ? 'font-serif italic text-drawer' : 'font-mono text-drawer') : 'font-serif italic text-drawer')
-    : 'font-serif font-medium text-memory'
+  let styleClasses = ''
+  if (variant === 'drawer') {
+    // a italic / b regular,都是 Newsreader (font-serif)
+    styleClasses = isA ? 'font-serif italic text-drawer' : 'font-serif text-drawer'
+  } else if (variant === 'memory') {
+    styleClasses = 'font-serif font-medium text-memory'
+  } else if (variant === 'carve') {
+    styleClasses = 'font-serif font-medium'
+  }
 
   return (
     <div className="relative">
@@ -50,8 +56,16 @@ export default function EntryBox({ variant, onSubmit, author }: EntryBoxProps) {
         onChange={e => { setValue(e.target.value); setStatus('idle') }}
         onKeyDown={handleKeyDown}
         spellCheck={false}
-        className={`w-full bg-transparent text-ink-primary border-b border-ink-rule focus:border-ink-primary outline-none resize-none ${styleClasses}`}
-        style={{ minHeight: '72px', padding: '8px 0', transition: 'none' }}
+        className={`w-full bg-transparent border-b border-ink-rule focus:border-ink-primary outline-none resize-none ${styleClasses}`}
+        style={{
+          minHeight: '72px',
+          padding: '8px 0',
+          transition: 'none',
+          color: variant === 'carve' ? '#D4D4D4' : undefined,
+          fontSize: variant === 'carve' ? '16px' : undefined,
+          lineHeight: variant === 'carve' ? 1.7 : undefined,
+          fontWeight: variant === 'carve' ? 500 : undefined,
+        }}
       />
       {status === 'failed' && (
         <div

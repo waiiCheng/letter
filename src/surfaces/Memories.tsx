@@ -1,116 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import Nav from '../primitives/Nav'
-import { readMemoryEntries } from '../actions/read'
-import { writeMemoryEntry } from '../actions/write'
-import type { Entry } from '../types/entry'
-
-interface MemoryEntryBoxProps {
-  entry?: Entry
-  onSaved: () => void
-}
-
-function MemoryEntryBox({ entry, onSaved }: MemoryEntryBoxProps) {
-  const [value, setValue] = useState(entry?.content ?? '')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'failed'>('idle')
-  const [focused, setFocused] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const isNew = !entry
-  const within24h = entry
-    ? Date.now() - new Date(entry.created_at).getTime() < 24 * 60 * 60 * 1000
-    : true
-  const editable = isNew || within24h
-
-  const autoGrow = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
-    }
-  }
-
-  useEffect(() => { autoGrow() }, [value])
-
-  const save = async (content: string) => {
-    if (!content.trim()) return
-    setStatus('saving')
-    const result = await writeMemoryEntry(content, entry?.id)
-    if (result.error) {
-      setStatus('failed')
-    } else {
-      setStatus('idle')
-      if (isNew) {
-        setValue('')
-        onSaved()
-      }
-    }
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value)
-    setStatus('idle')
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => save(e.target.value), 2000)
-  }
-
-  const handleBlur = () => {
-    setFocused(false)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    save(value)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey && isNew) {
-      e.preventDefault()
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-      save(value)
-    }
-  }
-
-  const isEmpty = value.trim() === ''
-  const dim = isEmpty && !focused && isNew
-
-  return (
-    <div style={{ position: 'relative', opacity: dim ? 0.3 : 1 }}>
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={handleChange}
-        onFocus={() => setFocused(true)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        readOnly={!editable}
-        rows={1}
-        spellCheck={false}
-        className="w-full bg-transparent border-0 border-b border-ink-rule text-ink-primary font-serif font-medium text-letter caret-ink-primary outline-none resize-none overflow-hidden"
-        style={{ lineHeight: 1.6, minHeight: '28px', padding: '8px 0' }}
-      />
-      {status === 'saving' && (
-        <div style={{ position: 'absolute', bottom: 4, right: 0, fontSize: 10, fontFamily: '"JetBrains Mono", monospace', color: '#555' }}>·</div>
-      )}
-      {status === 'failed' && (
-        <div style={{ position: 'absolute', bottom: 4, right: 0, fontSize: 10, fontFamily: '"JetBrains Mono", monospace', color: '#555' }}>× failed</div>
-      )}
-      {entry && !within24h && (
-        <div style={{ position: 'absolute', bottom: 4, right: 0, fontSize: 10, fontFamily: '"JetBrains Mono", monospace', color: '#555', opacity: 0.4 }}>sealed</div>
-      )}
-    </div>
-  )
-}
-
-import { useRef } from 'react'
+import EntryBox from '../primitives/EntryBox'
+import { readCarveEntries } from '../actions/read'
+import { writeCarveEntry, reviseCarveEntry } from '../actions/write'
+import { IdentityContext } from '../lib/identity'
+import type { MemoryEntry } from '../types/entry'
 
 export default function Memories() {
-  const [entries, setEntries] = useState<Entry[]>([])
+  const { identity } = useContext(IdentityContext)
+  const [entries, setEntries] = useState<MemoryEntry[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
 
   const refresh = async () => {
-    const { data } = await readMemoryEntries()
+    const { data } = await readCarveEntries()
     setEntries(data)
   }
 
-  useEffect(() => { refresh() }, [])
+  useEffect(() => { refresh() }, [identity])
 
-  function formatDate(iso: string) {
+  const handleSubmit = async (content: string) => {
+    const result = await writeCarveEntry(content, identity)
+    if (!result.error) await refresh()
+    return result
+  }
+
+  const handleRevise = async (originalId: string) => {
+    if (!editValue.trim()) return
+    const result = await reviseCarveEntry(originalId, editValue, identity)
+    if (!result.error) {
+      setEditingId(null)
+      setEditValue('')
+      await refresh()
+    }
+  }
+
+  const formatDate = (iso: string) => {
     const d = new Date(iso)
     const dd = String(d.getDate()).padStart(2, '0')
     const mm = String(d.getMonth() + 1).padStart(2, '0')
@@ -118,24 +43,271 @@ export default function Memories() {
     return `${dd}.${mm}.${yyyy}`
   }
 
+  const within24h = (iso: string) => {
+    return Date.now() - new Date(iso).getTime() < 24 * 60 * 60 * 1000
+  }
+
+  const aEntries = entries.filter(e => e.author === 'a')
+  const bEntries = entries.filter(e => e.author === 'b')
+
   return (
     <div className="min-h-screen text-ink-primary relative" style={{ zIndex: 1 }}>
       <Nav />
-      <div className="pt-24 pb-32" style={{ paddingLeft: '12vw', maxWidth: '600px' }}>
-          <MemoryEntryBox onSaved={refresh} />
-          <div style={{ marginTop: '48px' }}>
-            {entries.map((entry, i) => (
-              <div key={entry.id}>
-                {i > 0 && <div style={{ height: '1px', background: '#2A2A2A' }} />}
-                <div style={{ padding: '40px 0' }}>
-                  <div className="font-mono" style={{ fontSize: '10px', color: '#666', marginBottom: '12px' }}>
+
+      {/* EntryBox 顶部双栏 */}
+      <div style={{ width: '100%', padding: '6rem 5vw 4rem 5vw' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '40% 20% 40%',
+          alignItems: 'start',
+        }}>
+          <div>
+            {identity === 'a' && (
+              <EntryBox variant="carve" onSubmit={handleSubmit} author="a" />
+            )}
+          </div>
+          <div />
+          <div>
+            {identity === 'b' && (
+              <EntryBox variant="carve" onSubmit={handleSubmit} author="b" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 双栏 entries */}
+      <div style={{ width: '100%', padding: '0 5vw 8rem 5vw' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '40% 20% 40%',
+          gap: '0',
+          alignItems: 'start',
+        }}>
+          {/* a 左轨 */}
+          <div>
+            {aEntries.map((entry) => {
+              const is24h = within24h(entry.created_at)
+              const isEditing = editingId === entry.id
+
+              return (
+                <div key={entry.id} style={{ marginBottom: '140px', textAlign: 'right' }}>
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '10px',
+                    color: '#666',
+                    marginBottom: '8px',
+                  }}>
                     {formatDate(entry.created_at)}
                   </div>
-                  <MemoryEntryBox entry={entry} onSaved={refresh} />
+
+                  {isEditing ? (
+                    <div>
+                      <textarea
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleRevise(entry.id)
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingId(null)
+                            setEditValue('')
+                          }
+                        }}
+                        autoFocus
+                        spellCheck={false}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid #444',
+                          outline: 'none',
+                          resize: 'none',
+                          fontFamily: 'Newsreader, serif',
+                          fontWeight: 500,
+                          fontSize: '16px',
+                          lineHeight: 1.7,
+                          color: '#D4D4D4',
+                          textAlign: 'right',
+                          padding: '4px 0',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        position: 'relative',
+                        fontFamily: 'Newsreader, serif',
+                        fontWeight: 500,
+                        fontSize: '16px',
+                        lineHeight: 1.7,
+                        color: '#D4D4D4',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        borderBottom: is24h ? '1px solid rgba(212, 212, 212, 0.15)' : 'none',
+                        paddingBottom: is24h ? '4px' : '0',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (is24h) {
+                          const btn = e.currentTarget.querySelector('.edit-btn') as HTMLElement
+                          if (btn) btn.style.opacity = '0.5'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const btn = e.currentTarget.querySelector('.edit-btn') as HTMLElement
+                        if (btn) btn.style.opacity = '0'
+                      }}
+                    >
+                      {entry.content}
+                      {is24h && (
+                        <button
+                          className="edit-btn"
+                          onClick={() => {
+                            setEditingId(entry.id)
+                            setEditValue(entry.content)
+                          }}
+                          style={{
+                            position: 'absolute',
+                            bottom: '4px',
+                            right: '0',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#666',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: '10px',
+                            opacity: 0,
+                            transition: 'opacity 200ms ease',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                        >
+                          edit
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
+
+          {/* 中间星空空隙 */}
+          <div />
+
+          {/* b 右轨 */}
+          <div>
+            {bEntries.map((entry) => {
+              const is24h = within24h(entry.created_at)
+              const isEditing = editingId === entry.id
+
+              return (
+                <div key={entry.id} style={{ marginBottom: '140px', textAlign: 'left' }}>
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '10px',
+                    color: '#666',
+                    marginBottom: '8px',
+                  }}>
+                    {formatDate(entry.created_at)}
+                  </div>
+
+                  {isEditing ? (
+                    <div>
+                      <textarea
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleRevise(entry.id)
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingId(null)
+                            setEditValue('')
+                          }
+                        }}
+                        autoFocus
+                        spellCheck={false}
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid #444',
+                          outline: 'none',
+                          resize: 'none',
+                          fontFamily: 'Newsreader, serif',
+                          fontWeight: 500,
+                          fontSize: '16px',
+                          lineHeight: 1.7,
+                          color: '#D4D4D4',
+                          textAlign: 'left',
+                          padding: '4px 0',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        position: 'relative',
+                        fontFamily: 'Newsreader, serif',
+                        fontWeight: 500,
+                        fontSize: '16px',
+                        lineHeight: 1.7,
+                        color: '#D4D4D4',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        borderBottom: is24h ? '1px solid rgba(212, 212, 212, 0.15)' : 'none',
+                        paddingBottom: is24h ? '4px' : '0',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (is24h) {
+                          const btn = e.currentTarget.querySelector('.edit-btn') as HTMLElement
+                          if (btn) btn.style.opacity = '0.5'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        const btn = e.currentTarget.querySelector('.edit-btn') as HTMLElement
+                        if (btn) btn.style.opacity = '0'
+                      }}
+                    >
+                      {entry.content}
+                      {is24h && (
+                        <button
+                          className="edit-btn"
+                          onClick={() => {
+                            setEditingId(entry.id)
+                            setEditValue(entry.content)
+                          }}
+                          style={{
+                            position: 'absolute',
+                            bottom: '4px',
+                            left: '0',
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#666',
+                            cursor: 'pointer',
+                            padding: 0,
+                            fontFamily: 'JetBrains Mono, monospace',
+                            fontSize: '10px',
+                            opacity: 0,
+                            transition: 'opacity 200ms ease',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.5'}
+                        >
+                          edit
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -8,11 +8,58 @@ export async function writeLetterResponse(sectionId: string, content: string) {
   return { error }
 }
 
-export async function writeDrawerEntry(content: string) {
+export async function writeDrawerEntry(content: string, author: 'a' | 'b') {
   if (!content.trim()) return { error: null }
   const { error } = await supabase
     .from('drawer_entries')
-    .insert({ author: 'me', content: content.trim() })
+    .insert({ author, content: content.trim(), visibility: 'private' })
+  return { error }
+}
+
+export async function makeVisible(entryId: string) {
+  const { error } = await supabase
+    .from('drawer_entries')
+    .update({ visibility: 'visible', made_visible_at: new Date().toISOString() })
+    .eq('id', entryId)
+  return { error }
+}
+
+export async function writeMirrorEntry(content: string, author: 'a' | 'b', eventDate: string) {
+  if (!content.trim()) return { error: null }
+  const { error } = await supabase
+    .from('mirror_entries')
+    .insert({ author, content: content.trim(), event_date: eventDate })
+  return { error }
+}
+
+export async function writeCarveEntry(content: string, author: 'a' | 'b') {
+  if (!content.trim()) return { error: null }
+  const { error } = await supabase
+    .from('memory_entries')
+    .insert({ author, content: content.trim(), revises_id: null })
+  return { error }
+}
+
+export async function reviseCarveEntry(originalId: string, content: string, author: 'a' | 'b') {
+  if (!content.trim()) return { error: null }
+
+  const { data: original, error: fetchError } = await supabase
+    .from('memory_entries')
+    .select('created_at')
+    .eq('id', originalId)
+    .single()
+
+  if (fetchError || !original) return { error: fetchError }
+
+  const created = new Date(original.created_at).getTime()
+  const now = Date.now()
+  const within24h = now - created < 24 * 60 * 60 * 1000
+
+  if (!within24h) return { error: new Error('24h window expired') }
+
+  const { error } = await supabase
+    .from('memory_entries')
+    .insert({ author, content: content.trim(), revises_id: originalId })
   return { error }
 }
 

@@ -107,6 +107,98 @@ export default function StarfieldCanvas() {
     const points = new THREE.Points(geometry, material);
     scene.add(points);
 
+    const meteorGroup = new THREE.Group();
+    scene.add(meteorGroup);
+
+    const activeMeteors: Array<{
+      line: THREE.Line
+      material: THREE.LineBasicMaterial
+      startTime: number
+      duration: number
+      startPos: THREE.Vector3
+      endPos: THREE.Vector3
+      maxAlpha: number
+    }> = [];
+
+    let nextSpawnTime = performance.now() + (-Math.log(Math.random()) * 90000);
+
+    function spawnMeteor() {
+      const goLeft = Math.random() < 0.5;
+      const angleDeg = 15 + Math.random() * 20;
+      const angleRad = (angleDeg * Math.PI) / 180;
+
+      const z = -800 - Math.random() * 1000;
+      const viewRadius = Math.abs(z) * 0.577;
+
+      const edgeBias = Math.random() < 0.8;
+      const xStart = edgeBias
+        ? (goLeft ? viewRadius * 0.7 : -viewRadius * 0.7)
+        : (Math.random() - 0.5) * viewRadius;
+      const yStart = (Math.random() * 0.6 + 0.2) * viewRadius;
+
+      const distance = (0.15 + Math.random() * 0.15) * viewRadius * 2;
+
+      const xEnd = xStart + (goLeft ? -1 : 1) * distance * Math.cos(angleRad);
+      const yEnd = yStart - distance * Math.sin(angleRad);
+
+      const startPos = new THREE.Vector3(xStart, yStart, z);
+      const endPos = new THREE.Vector3(xEnd, yEnd, z);
+
+      const geometry = new THREE.BufferGeometry().setFromPoints([startPos, startPos]);
+
+      const material = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.NormalBlending,
+        depthWrite: false,
+      });
+
+      const line = new THREE.Line(geometry, material);
+      meteorGroup.add(line);
+
+      activeMeteors.push({
+        line,
+        material,
+        startTime: performance.now(),
+        duration: 700 + Math.random() * 700,
+        startPos,
+        endPos,
+        maxAlpha: 0.12 + Math.random() * 0.06,
+      });
+    }
+
+    function updateMeteors(now: number) {
+      if (now >= nextSpawnTime && activeMeteors.length < 2) {
+        spawnMeteor();
+        nextSpawnTime = now + (-Math.log(Math.random()) * 90000);
+      }
+
+      for (let i = activeMeteors.length - 1; i >= 0; i--) {
+        const m = activeMeteors[i];
+        const elapsed = (now - m.startTime) / m.duration;
+
+        if (elapsed >= 1.0) {
+          meteorGroup.remove(m.line);
+          m.line.geometry.dispose();
+          m.material.dispose();
+          activeMeteors.splice(i, 1);
+          continue;
+        }
+
+        const alpha = m.maxAlpha * Math.exp(-5 * Math.pow(elapsed - 0.15, 2));
+        m.material.opacity = alpha;
+
+        const headT = elapsed;
+        const tailT = Math.max(0, elapsed - 0.3);
+
+        const headPos = new THREE.Vector3().lerpVectors(m.startPos, m.endPos, headT);
+        const tailPos = new THREE.Vector3().lerpVectors(m.startPos, m.endPos, tailT);
+
+        m.line.geometry.setFromPoints([tailPos, headPos]);
+      }
+    }
+
     // 物理引擎状态
     let targetScroll = window.scrollY;
     let currentScroll = window.scrollY;
@@ -128,6 +220,9 @@ export default function StarfieldCanvas() {
     let animId: number;
     const animate = () => {
       animId = requestAnimationFrame(animate);
+
+      const now = performance.now();
+      updateMeteors(now);
 
       // 黏滞系数 0.08:不是僵硬跟随,而是像在深水中滑动
       const deltaScroll = targetScroll - currentScroll;
