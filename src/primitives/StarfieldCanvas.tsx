@@ -131,6 +131,7 @@ export default function StarfieldCanvas() {
     let nextSpawnTime = performance.now() + (-Math.log(Math.random()) * 90000);
 
     function spawnMeteor() {
+      console.log('🌠 METEOR SPAWN triggered');
       const goLeft = Math.random() < 0.5;
       const angleDeg = 15 + Math.random() * 20;
       const angleRad = (angleDeg * Math.PI) / 180;
@@ -178,6 +179,7 @@ export default function StarfieldCanvas() {
 
     function updateMeteors(now: number) {
       if (now >= nextSpawnTime && activeMeteors.length < 2) {
+        console.log('⏰ METEOR TRIGGER: spawn condition met', { now, nextSpawnTime, activeCount: activeMeteors.length });
         spawnMeteor();
         nextSpawnTime = now + (-Math.log(Math.random()) * 90000);
       }

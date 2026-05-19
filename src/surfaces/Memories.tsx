@@ -145,8 +145,6 @@ export default function Memories() {
                         color: '#D4D4D4',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
-                        borderBottom: is24h ? '1px solid rgba(212, 212, 212, 0.15)' : 'none',
-                        paddingBottom: is24h ? '4px' : '0',
                       }}
                       onMouseEnter={(e) => {
                         if (is24h) {
@@ -259,8 +257,6 @@ export default function Memories() {
                         color: '#D4D4D4',
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word',
-                        borderBottom: is24h ? '1px solid rgba(212, 212, 212, 0.15)' : 'none',
-                        paddingBottom: is24h ? '4px' : '0',
                       }}
                       onMouseEnter={(e) => {
                         if (is24h) {

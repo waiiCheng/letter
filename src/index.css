@@ -34,3 +34,21 @@ body {
   60% { transform: translateX(-1px); filter: blur(0.3px); opacity: 0.6; }
   80% { transform: translateX(1px); opacity: 1; }
 }
+
+/* 彻底封杀 Textarea 和所有容器的默认滚动条 */
+textarea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+textarea::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
