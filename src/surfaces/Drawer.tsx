@@ -1,14 +1,17 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect, useContext, useRef } from 'react'
 import Nav from '../primitives/Nav'
 import EntryBox from '../primitives/EntryBox'
 import EntryList from '../primitives/EntryList'
 import { readDrawerEntries } from '../actions/read'
 import { writeDrawerEntry, makeVisible } from '../actions/write'
 import { IdentityContext } from '../lib/identity'
+import { PlungeContext } from '../App'
 import type { Entry } from '../types/entry'
 
 export default function Drawer() {
   const { identity, forget } = useContext(IdentityContext)
+  const plunge = useContext(PlungeContext)
+  const hasPlungedRef = useRef(false)
   const [entries, setEntries] = useState<Entry[]>([])
   const [hoverForgetZone, setHoverForgetZone] = useState(false)
 
@@ -18,6 +21,39 @@ export default function Drawer() {
   }
 
   useEffect(() => { refresh() }, [identity])
+
+  useEffect(() => {
+    let dwellTimer: any = null
+
+    const handleScroll = () => {
+      if (hasPlungedRef.current) return
+
+      const scrolledToBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 50
+
+      if (scrolledToBottom) {
+        if (!dwellTimer) {
+          dwellTimer = setTimeout(() => {
+            hasPlungedRef.current = true
+            plunge('/memories')
+          }, 1200)
+        }
+      } else {
+        if (dwellTimer) {
+          clearTimeout(dwellTimer)
+          dwellTimer = null
+        }
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    handleScroll() // 初始检查
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (dwellTimer) clearTimeout(dwellTimer)
+    }
+  }, [plunge])
 
   const handleSubmit = async (content: string) => {
     const result = await writeDrawerEntry(content, identity)

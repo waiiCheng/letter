@@ -21,7 +21,15 @@ export default function StarfieldCanvas() {
     // camera always faces -z direction — rock solid baseline
     camera.lookAt(0, 0, -1);
 
-    const TOTAL = 2500;
+    const BASELINE_AREA = 1920 * 1080;
+    const BASELINE_STARS = 10000;
+
+    function calculateStarCount() {
+      const currentArea = window.innerWidth * window.innerHeight;
+      return Math.round(BASELINE_STARS * (currentArea / BASELINE_AREA));
+    }
+
+    const TOTAL = calculateStarCount();
     const positions  = new Float32Array(TOTAL * 3);
     const sizes      = new Float32Array(TOTAL);
     const opacities  = new Float32Array(TOTAL);
