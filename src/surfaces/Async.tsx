@@ -36,7 +36,7 @@ export default function Async() {
   }
 
   const handleUnlock = () => {
-    if (passwordInput === 'mirror') {
+    if (passwordInput === 'Mirror') {
       localStorage.setItem(ASYNC_A_KEY, 'true')
       setHasAccess(true)
       setViewer('a')
