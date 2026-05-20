@@ -67,6 +67,7 @@ export default function Async() {
     >
       <Nav />
 
+      {/* 顶部居中 a/b toggle - 始终显示 */}
       <div style={{
         position: 'fixed',
         top: '24px',
@@ -74,54 +75,58 @@ export default function Async() {
         transform: 'translateX(-50%)',
         zIndex: 5,
         display: 'flex',
-        gap: '16px',
+        gap: '12px',
         alignItems: 'center',
         fontFamily: 'JetBrains Mono, monospace',
         fontSize: '11px',
       }}>
-        {hasAccess ? (
-          <div
-            onMouseEnter={() => setHoveringToggle(true)}
-            onMouseLeave={() => setHoveringToggle(false)}
+        <div
+          onMouseEnter={() => setHoveringToggle(true)}
+          onMouseLeave={() => setHoveringToggle(false)}
+          style={{
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'center',
+          }}
+        >
+          <button
+            onClick={() => setViewer('a')}
             style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
+              background: 'transparent',
+              border: 'none',
+              cursor: viewer === 'a' ? 'default' : 'pointer',
+              color: '#E8E5E0',
+              opacity: viewer === 'a' ? 1 : 0.4,
+              padding: 0,
+              fontFamily: 'inherit',
+              fontSize: 'inherit',
             }}
+            onMouseEnter={(e) => { if (viewer !== 'a') e.currentTarget.style.opacity = '1' }}
+            onMouseLeave={(e) => { if (viewer !== 'a') e.currentTarget.style.opacity = '0.4' }}
           >
-            <button
-              onClick={() => setViewer('a')}
-              style={{
-                opacity: viewer === 'a' ? 1 : 0.3,
-                background: 'transparent',
-                border: 'none',
-                color: '#E8E5E0',
-                cursor: 'pointer',
-                padding: 0,
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '11px',
-              }}
-            >
-              a
-            </button>
-            <span style={{ opacity: 0.3, color: '#E8E5E0' }}>/</span>
-            <button
-              onClick={() => setViewer('b')}
-              style={{
-                opacity: viewer === 'b' ? 1 : 0.3,
-                background: 'transparent',
-                border: 'none',
-                color: '#E8E5E0',
-                cursor: 'pointer',
-                padding: 0,
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '11px',
-              }}
-            >
-              b
-            </button>
+            a
+          </button>
+          <span style={{ opacity: 0.3, color: '#E8E5E0' }}>/</span>
+          <button
+            onClick={() => setViewer('b')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: viewer === 'b' ? 'default' : 'pointer',
+              color: '#E8E5E0',
+              opacity: viewer === 'b' ? 1 : 0.4,
+              padding: 0,
+              fontFamily: 'inherit',
+              fontSize: 'inherit',
+            }}
+            onMouseEnter={(e) => { if (viewer !== 'b') e.currentTarget.style.opacity = '1' }}
+            onMouseLeave={(e) => { if (viewer !== 'b') e.currentTarget.style.opacity = '0.4' }}
+          >
+            b
+          </button>
 
-            {/* forget 按钮:hover toggle 区域时浮现 */}
+          {/* forget 按钮: 仅 hasAccess 时，hover toggle 区域浮现 */}
+          {hasAccess && (
             <button
               onClick={() => {
                 localStorage.removeItem(ASYNC_A_KEY)
@@ -146,8 +151,19 @@ export default function Async() {
             >
               forget
             </button>
-          </div>
-        ) : (
+          )}
+        </div>
+      </div>
+
+      {/* Mirror 密码框: 仅 viewer === 'b' 且未解锁时显示 */}
+      {viewer === 'b' && !hasAccess && (
+        <div style={{
+          position: 'fixed',
+          top: '60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 5,
+        }}>
           <input
             type="text"
             value={passwordInput}
@@ -159,10 +175,11 @@ export default function Async() {
               width: '120px',
               fontSize: '11px',
               padding: '4px 0',
+              fontFamily: 'JetBrains Mono, monospace',
             }}
           />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="pt-24 pb-32" style={{ margin: '0 auto', maxWidth: '1100px', padding: '6rem 24px 8rem 24px' }}>
 

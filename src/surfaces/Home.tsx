@@ -36,7 +36,7 @@ export default function Home() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return
 
-    if (value === 'letter') {
+    if (value === 'baseline') {
       if (ritualStarted.current) return
       ritualStarted.current = true
       localStorage.removeItem('letter_a_identity')
