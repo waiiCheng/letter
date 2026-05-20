@@ -1,8 +1,9 @@
 import { useState, useEffect, createContext } from 'react'
 
 const A_KEY = 'letter_a_identity'
+const B_KEY = 'letter_b_identity'
 
-export type Identity = 'a' | 'b'
+export type Identity = 'a' | 'b' | 'guest'
 export type EditMode = 'none' | 'a-editing' | 'b-editing'
 
 export const IdentityContext = createContext<{
@@ -11,21 +12,25 @@ export const IdentityContext = createContext<{
   setEditMode: (m: EditMode) => void
   forget: () => void
 }>({
-  identity: 'b',
+  identity: 'guest',
   editMode: 'none',
   setEditMode: () => {},
   forget: () => {},
 })
 
+function readIdentity(): Identity {
+  if (localStorage.getItem(A_KEY) === 'true') return 'a'
+  if (localStorage.getItem(B_KEY) === 'true') return 'b'
+  return 'guest'
+}
+
 export function useIdentityProvider() {
-  const [identity, setIdentity] = useState<Identity>(() =>
-    localStorage.getItem(A_KEY) === 'true' ? 'a' : 'b'
-  )
+  const [identity, setIdentity] = useState<Identity>(readIdentity)
   const [editMode, setEditMode] = useState<EditMode>('none')
 
   useEffect(() => {
     const handler = () => {
-      setIdentity(localStorage.getItem(A_KEY) === 'true' ? 'a' : 'b')
+      setIdentity(readIdentity())
     }
     window.addEventListener('storage', handler)
     return () => window.removeEventListener('storage', handler)
@@ -33,7 +38,8 @@ export function useIdentityProvider() {
 
   const forget = () => {
     localStorage.removeItem(A_KEY)
-    setIdentity('b')
+    localStorage.removeItem(B_KEY)
+    setIdentity('guest')
     setEditMode('none')
   }
 

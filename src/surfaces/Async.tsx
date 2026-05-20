@@ -4,10 +4,11 @@ import AsyncEntryBox from '../primitives/AsyncEntryBox'
 import { readAsyncEntries, publishAsyncEntry, type AsyncEntry, type AsyncAuthor } from '../actions/asyncActions'
 
 const ASYNC_A_KEY = 'letter_a_identity'
+const ASYNC_B_KEY = 'letter_b_identity'
 
 export default function Async() {
   const [hasAccess, setHasAccess] = useState<boolean>(() => {
-    return localStorage.getItem(ASYNC_A_KEY) === 'true'
+    return localStorage.getItem(ASYNC_A_KEY) === 'true' || localStorage.getItem(ASYNC_B_KEY) === 'true'
   })
 
   const [passwordInput, setPasswordInput] = useState('')
@@ -38,12 +39,16 @@ export default function Async() {
   const handleUnlock = () => {
     if (passwordInput === 'Mirror') {
       localStorage.setItem(ASYNC_A_KEY, 'true')
+      window.dispatchEvent(new Event('storage'))
       setHasAccess(true)
       setViewer('a')
-      setPasswordInput('')
-    } else {
-      setPasswordInput('')
+    } else if (passwordInput === 'Life') {
+      localStorage.setItem(ASYNC_B_KEY, 'true')
+      window.dispatchEvent(new Event('storage'))
+      setHasAccess(true)
+      setViewer('b')
     }
+    setPasswordInput('')  // 不管对错都清(错的静默)
   }
 
   const formatTime = (iso: string) => {
@@ -130,6 +135,8 @@ export default function Async() {
             <button
               onClick={() => {
                 localStorage.removeItem(ASYNC_A_KEY)
+                localStorage.removeItem(ASYNC_B_KEY)
+                window.dispatchEvent(new Event('storage'))
                 setHasAccess(false)
                 setViewer('b')
                 setHoveringToggle(false)
