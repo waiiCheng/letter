@@ -188,9 +188,16 @@ export default function Async() {
         </div>
       )}
 
-      <div className="pt-24 pb-32" style={{ margin: '0 auto', maxWidth: '1100px', padding: '6rem 24px 8rem 24px' }}>
+      <div className="pt-24 pb-32" style={{ margin: '0 auto', maxWidth: '1100px', padding: '6rem 24px 8rem 24px', position: 'relative', paddingTop: '180px' }}>
 
-        <AsyncEntryBox author={viewer} onSubmit={refresh} />
+        <div style={{
+          position: 'absolute',
+          top: '6rem',
+          left: '24px',
+          maxWidth: '440px',
+        }}>
+          <AsyncEntryBox author={viewer} onSubmit={refresh} />
+        </div>
 
         {entries.map((entry) => {
           const isMine = entry.author === viewer
