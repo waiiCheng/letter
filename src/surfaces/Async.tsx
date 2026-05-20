@@ -199,7 +199,9 @@ export default function Async() {
           <AsyncEntryBox author={viewer} onSubmit={refresh} />
         </div>
 
-        {entries.map((entry) => {
+        {entries
+          .filter(entry => entry.author === viewer)
+          .map((entry) => {
           const isMine = entry.author === viewer
           const isPrivate = entry.visibility === 'private'
           return (
@@ -207,7 +209,7 @@ export default function Async() {
               key={entry.id}
               style={{
                 maxWidth: '440px',
-                marginLeft: entry.author === 'a' ? 0 : 'auto',
+                marginLeft: isPrivate ? 0 : 'auto',
                 marginBottom: '48px',
                 opacity: isPrivate && !isMine ? 0 : 1,
               }}
@@ -221,10 +223,10 @@ export default function Async() {
                 {formatTime(entry.created_at)}
               </div>
               <p
-                className={entry.author === 'a' ? 'font-serif' : 'font-mono'}
+                className={viewer === 'a' ? 'font-serif' : 'font-mono'}
                 style={{
                   margin: 0,
-                  fontSize: entry.author === 'a' ? '15px' : '13px',
+                  fontSize: viewer === 'a' ? '15px' : '13px',
                   lineHeight: 1.7,
                   color: '#E8E5E0',
                 }}
