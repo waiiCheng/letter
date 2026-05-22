@@ -7,14 +7,18 @@ const ASYNC_A_KEY = 'letter_a_identity'
 const ASYNC_B_KEY = 'letter_b_identity'
 
 export default function Async() {
-  const [hasAccess, setHasAccess] = useState<boolean>(() => {
-    return localStorage.getItem(ASYNC_A_KEY) === 'true' || localStorage.getItem(ASYNC_B_KEY) === 'true'
+  const [unlockedPage, setUnlockedPage] = useState<AsyncAuthor | null>(() => {
+    const aUnlocked = localStorage.getItem(ASYNC_A_KEY) === 'true'
+    const bUnlocked = localStorage.getItem(ASYNC_B_KEY) === 'true'
+    if (aUnlocked) return 'a'
+    if (bUnlocked) return 'b'
+    return null
   })
 
   const [passwordInput, setPasswordInput] = useState('')
   const [hoveringToggle, setHoveringToggle] = useState(false)
 
-  const [viewer, setViewer] = useState<AsyncAuthor>(hasAccess ? 'a' : 'b')
+  const [viewer, setViewer] = useState<AsyncAuthor>('b')
   const [entries, setEntries] = useState<AsyncEntry[]>([])
   const [mounted, setMounted] = useState(false)
 
@@ -37,16 +41,14 @@ export default function Async() {
   }
 
   const handleUnlock = () => {
-    if (passwordInput === 'Mirror') {
+    if (viewer === 'a' && passwordInput === 'Mirror') {
       localStorage.setItem(ASYNC_A_KEY, 'true')
       window.dispatchEvent(new Event('storage'))
-      setHasAccess(true)
-      setViewer('a')
-    } else if (passwordInput === 'Life') {
+      setUnlockedPage('a')
+    } else if (viewer === 'b' && passwordInput === 'Life') {
       localStorage.setItem(ASYNC_B_KEY, 'true')
       window.dispatchEvent(new Event('storage'))
-      setHasAccess(true)
-      setViewer('b')
+      setUnlockedPage('b')
     }
     setPasswordInput('')  // 不管对错都清(错的静默)
   }
@@ -130,15 +132,14 @@ export default function Async() {
             b
           </button>
 
-          {/* forget 按钮: 仅 hasAccess 时，hover toggle 区域浮现 */}
-          {hasAccess && (
+          {/* forget 按钮: 仅当前页面已解锁时，hover toggle 区域浮现 */}
+          {unlockedPage === viewer && (
             <button
               onClick={() => {
                 localStorage.removeItem(ASYNC_A_KEY)
                 localStorage.removeItem(ASYNC_B_KEY)
                 window.dispatchEvent(new Event('storage'))
-                setHasAccess(false)
-                setViewer('b')
+                setUnlockedPage(null)
                 setHoveringToggle(false)
               }}
               style={{
@@ -162,8 +163,8 @@ export default function Async() {
         </div>
       </div>
 
-      {/* Mirror 密码框: 仅 viewer === 'b' 且未解锁时显示 */}
-      {viewer === 'b' && !hasAccess && (
+      {/* 密码框: 仅当前页面未解锁时显示 */}
+      {unlockedPage !== viewer && (
         <div style={{
           position: 'fixed',
           top: '60px',
@@ -196,7 +197,7 @@ export default function Async() {
           left: '24px',
           maxWidth: '440px',
         }}>
-          <AsyncEntryBox author={viewer} onSubmit={refresh} />
+          {unlockedPage === viewer && <AsyncEntryBox author={viewer} onSubmit={refresh} />}
         </div>
 
         {entries
