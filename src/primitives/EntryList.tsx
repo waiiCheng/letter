@@ -3,7 +3,7 @@ import type { Entry } from '../types/entry'
 interface EntryListProps {
   entries: Entry[]
   variant: 'drawer' | 'memory'
-  viewer?: 'a' | 'b'
+  viewer?: 'a' | 'b' | 'guest'
   onMakeVisible?: (entryId: string) => void
 }
 

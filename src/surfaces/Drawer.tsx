@@ -16,6 +16,7 @@ export default function Drawer() {
   const [hoverForgetZone, setHoverForgetZone] = useState(false)
 
   const refresh = async () => {
+    if (identity === 'guest') return
     const { data } = await readDrawerEntries(identity)
     setEntries(data)
   }
@@ -56,6 +57,7 @@ export default function Drawer() {
   }, [plunge])
 
   const handleSubmit = async (content: string) => {
+    if (identity === 'guest') return { error: new Error('guest cannot write') }
     const result = await writeDrawerEntry(content, identity)
     if (!result.error) await refresh()
     return result

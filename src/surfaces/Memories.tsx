@@ -20,13 +20,14 @@ export default function Memories() {
   useEffect(() => { refresh() }, [identity])
 
   const handleSubmit = async (content: string) => {
+    if (identity === 'guest') return { error: new Error('guest cannot write') }
     const result = await writeCarveEntry(content, identity)
     if (!result.error) await refresh()
     return result
   }
 
   const handleRevise = async (originalId: string) => {
-    if (!editValue.trim()) return
+    if (!editValue.trim() || identity === 'guest') return
     const result = await reviseCarveEntry(originalId, editValue, identity)
     if (!result.error) {
       setEditingId(null)
