@@ -48,7 +48,6 @@ export default function Drawer() {
     }
 
     window.addEventListener('scroll', handleScroll)
-    handleScroll() // 初始检查
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
