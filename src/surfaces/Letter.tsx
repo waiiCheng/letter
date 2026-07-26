@@ -3,7 +3,6 @@ import Nav from '../primitives/Nav'
 import ResponseBox from '../primitives/ResponseBox'
 import { sections } from '../content/sections'
 import { PlungeContext } from '../App'
-import { IdentityContext } from '../lib/identity'
 import { supabase } from '../lib/supabase'
 
 export default function Letter() {
@@ -11,12 +10,11 @@ export default function Letter() {
   const refs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [mounted, setMounted] = useState(false)
   const plunge = useContext(PlungeContext)
-  const { identity, editMode } = useContext(IdentityContext)
-  const isEditingB = editMode === 'b-editing'
+  const [bareIdentity, setBareIdentity] = useState<'guest' | 'a' | 'b'>('guest')
 
   const [edits, setEdits] = useState<Record<string, string>>({})
   const [editingDrafts, setEditingDrafts] = useState<Record<string, string>>({})
-  const prevEditMode = useRef(editMode)
+  const prevBareIdentity = useRef<'guest' | 'a' | 'b'>('guest')
   const hasPlungedRef = useRef(false)
 
   useEffect(() => {
@@ -46,12 +44,52 @@ export default function Letter() {
   }, [])
 
   useEffect(() => {
+    let buffer = ''
+    let bufferTimer: any = null
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+
+      if (isInput) return
+
+      if (e.key >= '0' && e.key <= '9') {
+        buffer += e.key
+        if (buffer.length > 4) buffer = buffer.slice(-4)
+        clearTimeout(bufferTimer)
+        bufferTimer = setTimeout(() => { buffer = '' }, 1500)
+      }
+
+      if (e.key === 'Enter') {
+        if (buffer === '1234') setBareIdentity('a')
+        else if (buffer === '5678') setBareIdentity('b')
+        else if (buffer === '0000') setBareIdentity('guest')
+        buffer = ''
+        clearTimeout(bufferTimer)
+      }
+
+      if (e.key === 'Escape') {
+        setBareIdentity('guest')
+        setEditingDrafts({})
+        buffer = ''
+        clearTimeout(bufferTimer)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      clearTimeout(bufferTimer)
+    }
+  }, [])
+
+  useEffect(() => {
     const abortFlag = sessionStorage.getItem('abort_edit')
     if (abortFlag === 'true') {
       setEditingDrafts({})
       sessionStorage.removeItem('abort_edit')
     }
-  }, [editMode])
+  }, [])
 
   useEffect(() => {
     let dwellTimer: any = null
@@ -80,8 +118,6 @@ export default function Letter() {
     }
 
     window.addEventListener('scroll', handleScroll)
-    // 初始检查一次(如果页面短到一开始就在底部)
-    handleScroll()
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
@@ -112,7 +148,7 @@ export default function Letter() {
           section_id,
           paragraph_index,
           new_body: content.trim(),
-          edited_by: identity,
+          edited_by: bareIdentity,
         })
       }
 
@@ -120,11 +156,11 @@ export default function Letter() {
       setEditingDrafts({})
     }
 
-    if (prevEditMode.current !== 'none' && editMode === 'none') {
+    if (prevBareIdentity.current !== 'guest' && bareIdentity === 'guest') {
       saveEdits()
     }
-    prevEditMode.current = editMode
-  }, [editMode, editingDrafts, identity])
+    prevBareIdentity.current = bareIdentity
+  }, [bareIdentity, editingDrafts])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -170,7 +206,8 @@ export default function Letter() {
               {section.paragraphs.map((paragraph, pIdx) => {
                 const id = `${section.id}-${pIdx}`
                 const isVisible = visible.has(id)
-                const isEditing = editMode === 'a-editing' || editMode === 'b-editing'
+                const isEditingA = bareIdentity === 'a'
+                const isEditingB = bareIdentity === 'b'
                 const currentText = editingDrafts[id] ?? edits[id] ?? paragraph
 
                 return (
@@ -186,7 +223,7 @@ export default function Letter() {
                   >
                     {/* 段落:靠左 */}
                     <div style={{ maxWidth: '440px' }}>
-                      {isEditing ? (
+                      {isEditingA ? (
                         <textarea
                           value={currentText}
                           onChange={(e) => {
@@ -211,7 +248,7 @@ export default function Letter() {
                       )}
                     </div>
 
-                    {/* 响应:仅 b-editing 模式下显示 */}
+                    {/* 响应:仅 bareIdentity='b' 时显示 */}
                     {isEditingB && (
                       <div style={{
                         maxWidth: '440px',
