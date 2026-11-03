@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useIsMobile } from '../lib/useIsMobile'
 
 type Phase = 'input' | 'flash' | 'ritual'
 type ExitPhase = 'idle' | 'glitch' | 'blackout' | 'line'
@@ -13,6 +14,7 @@ const SENTENCES = [
 
 export default function Home() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [value, setValue] = useState('')
   const [phase, setPhase] = useState<Phase>('input')
   const [shaking, setShaking] = useState(false)
@@ -103,7 +105,7 @@ export default function Home() {
     const isGlitching = exitPhase === 'glitch'
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-bg text-ink-primary font-serif text-letter">
+      <div className="min-h-screen flex items-center justify-center bg-ink-bg text-ink-primary font-serif text-letter" style={{ fontSize: isMobile ? '14px' : undefined }}>
         <div
           className="flex flex-col items-start"
           style={{

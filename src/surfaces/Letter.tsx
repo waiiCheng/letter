@@ -202,7 +202,7 @@ export default function Letter() {
                 marginBottom: isMobile ? '20px' : undefined,
                 opacity: 0.3,
                 fontFamily: 'Newsreader, serif',
-                fontSize: isMobile ? '13px' : '14px',
+                fontSize: isMobile ? '12px' : '14px',
                 pointerEvents: 'none',
               }}>
                 {section.topic}
@@ -246,7 +246,7 @@ export default function Letter() {
                           rows={3}
                         />
                       ) : (
-                        <p className="font-serif text-letter text-ink-primary" style={{ margin: 0, lineHeight: 1.7 }}>
+                        <p className="font-serif text-letter text-ink-primary" style={{ margin: 0, lineHeight: 1.7, fontSize: isMobile ? '14px' : undefined }}>
                           {currentText}
                         </p>
                       )}

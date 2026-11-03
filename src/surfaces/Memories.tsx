@@ -5,10 +5,12 @@ import { readCarveEntries } from '../actions/read'
 import { writeCarveEntry, reviseCarveEntry } from '../actions/write'
 import { IdentityContext } from '../lib/identity'
 import type { MemoryEntry } from '../types/entry'
+import { useIsMobile } from '../lib/useIsMobile'
 
 export default function Memories() {
   const { identity } = useContext(IdentityContext)
   const [entries, setEntries] = useState<MemoryEntry[]>([])
+  const isMobile = useIsMobile()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
 
@@ -127,7 +129,7 @@ export default function Memories() {
                           resize: 'none',
                           fontFamily: 'Newsreader, serif',
                           fontWeight: 500,
-                          fontSize: '16px',
+                          fontSize: isMobile ? '13px' : '16px',
                           lineHeight: 1.7,
                           color: '#D4D4D4',
                           textAlign: 'right',
@@ -141,7 +143,7 @@ export default function Memories() {
                         position: 'relative',
                         fontFamily: 'Newsreader, serif',
                         fontWeight: 500,
-                        fontSize: '16px',
+                        fontSize: isMobile ? '13px' : '16px',
                         lineHeight: 1.7,
                         color: '#D4D4D4',
                         whiteSpace: 'pre-wrap',
@@ -239,7 +241,7 @@ export default function Memories() {
                           resize: 'none',
                           fontFamily: 'Newsreader, serif',
                           fontWeight: 500,
-                          fontSize: '16px',
+                          fontSize: isMobile ? '13px' : '16px',
                           lineHeight: 1.7,
                           color: '#D4D4D4',
                           textAlign: 'left',
@@ -253,7 +255,7 @@ export default function Memories() {
                         position: 'relative',
                         fontFamily: 'Newsreader, serif',
                         fontWeight: 500,
-                        fontSize: '16px',
+                        fontSize: isMobile ? '13px' : '16px',
                         lineHeight: 1.7,
                         color: '#D4D4D4',
                         whiteSpace: 'pre-wrap',
