@@ -4,11 +4,13 @@ import ResponseBox from '../primitives/ResponseBox'
 import { sections } from '../content/sections'
 import { PlungeContext } from '../App'
 import { supabase } from '../lib/supabase'
+import { useIsMobile } from '../lib/useIsMobile'
 
 export default function Letter() {
   const [visible, setVisible] = useState<Set<string>>(new Set())
   const refs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [mounted, setMounted] = useState(false)
+  const isMobile = useIsMobile()
   const plunge = useContext(PlungeContext)
   const [bareIdentity, setBareIdentity] = useState<'guest' | 'a' | 'b'>('guest')
 
@@ -191,14 +193,16 @@ export default function Letter() {
 
           {sections.map((section) => (
             <div key={section.id} style={{ marginBottom: '80px', position: 'relative' }}>
-              {/* topic 飘在 section 右上 */}
+              {/* topic 飘在 section 右上 (手机上没有右侧留白, 改为段落上方靠右) */}
               <div style={{
-                position: 'absolute',
+                position: isMobile ? 'static' : 'absolute',
                 top: 0,
                 right: 0,
+                textAlign: 'right',
+                marginBottom: isMobile ? '20px' : undefined,
                 opacity: 0.3,
                 fontFamily: 'Newsreader, serif',
-                fontSize: '14px',
+                fontSize: isMobile ? '13px' : '14px',
                 pointerEvents: 'none',
               }}>
                 {section.topic}

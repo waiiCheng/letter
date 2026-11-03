@@ -7,10 +7,12 @@ import { writeDrawerEntry, makeVisible } from '../actions/write'
 import { IdentityContext } from '../lib/identity'
 import { PlungeContext } from '../App'
 import type { Entry } from '../types/entry'
+import { useIsMobile } from '../lib/useIsMobile'
 
 export default function Drawer() {
   const { identity, forget } = useContext(IdentityContext)
   const plunge = useContext(PlungeContext)
+  const isMobile = useIsMobile()
   const hasPlungedRef = useRef(false)
   const [entries, setEntries] = useState<Entry[]>([])
   const [hoverForgetZone, setHoverForgetZone] = useState(false)
@@ -116,7 +118,7 @@ export default function Drawer() {
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '45% 10% 45%',
+          gridTemplateColumns: isMobile ? '1fr 20px 1fr' : '45% 10% 45%',
           alignItems: 'start',
         }}>
           {/* 左轨 EntryBox (仅 a 身份时显示) */}

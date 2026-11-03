@@ -3,6 +3,7 @@ import Nav from '../primitives/Nav'
 import { readMirrorEntries } from '../actions/read'
 import { IdentityContext } from '../lib/identity'
 import type { MirrorEntry } from '../types/entry'
+import { useIsMobile } from '../lib/useIsMobile'
 
 type EventGroup = {
   event_date: string
@@ -12,6 +13,7 @@ type EventGroup = {
 
 export default function Mirror() {
   const { identity } = useContext(IdentityContext)
+  const isMobile = useIsMobile()
   const [groups, setGroups] = useState<EventGroup[]>([])
   const [scrollY, setScrollY] = useState(0)
   const [hoveredEventDate, setHoveredEventDate] = useState<string | null>(null)
@@ -67,28 +69,30 @@ export default function Mirror() {
     <div className="min-h-screen text-ink-primary relative" style={{ zIndex: 1 }}>
       <Nav />
 
-      <div style={{ width: '100%', padding: '12rem 5vw 12rem 5vw' }}>
+      <div style={{ width: '100%', padding: isMobile ? '9rem 5vw 9rem 5vw' : '12rem 5vw 12rem 5vw' }}>
         {groups.map((g) => (
           <div
             key={g.event_date}
             style={{
               display: 'grid',
-              gridTemplateColumns: '45% 10% 45%',
+              gridTemplateColumns: isMobile ? '1fr 20px 1fr' : '45% 10% 45%',
               gap: '0',
               alignItems: 'start',
-              marginBottom: '120px',
+              marginBottom: isMobile ? '96px' : '120px',
             }}
           >
             {/* 左轨: a 视角,正常滚动,text-right */}
             <div style={{
               width: '100%',
               textAlign: 'right',
+              gridColumn: isMobile ? 1 : undefined,
+              gridRow: isMobile ? 2 : undefined,
             }}>
               {g.a ? (
                 <div style={{
                   fontFamily: 'Newsreader, serif',
                   fontWeight: 400,
-                  fontSize: '14px',
+                  fontSize: isMobile ? '13px' : '14px',
                   lineHeight: 1.6,
                   color: '#E8E5E0',
                   opacity: getOpacity('a', g.event_date),
@@ -110,13 +114,16 @@ export default function Mirror() {
               )}
             </div>
 
-            {/* 中轴: 锚点 date */}
+            {/* 中轴: 锚点 date (手机上放在这一对的上方, 横跨两轨) */}
             <div
               style={{
                 width: '100%',
+                gridColumn: isMobile ? '1 / -1' : undefined,
+                gridRow: isMobile ? 1 : undefined,
+                marginBottom: isMobile ? '14px' : undefined,
+                fontSize: isMobile ? '9px' : '10px',
                 textAlign: 'center',
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '10px',
                 color: '#666',
                 cursor: 'default',
                 paddingTop: '2px',
@@ -124,6 +131,7 @@ export default function Mirror() {
               }}
               onMouseEnter={() => setHoveredEventDate(g.event_date)}
               onMouseLeave={() => setHoveredEventDate(null)}
+              onClick={() => setHoveredEventDate(hoveredEventDate === g.event_date ? null : g.event_date)}
             >
               {formatDate(g.event_date)}
             </div>
@@ -134,20 +142,22 @@ export default function Mirror() {
               textAlign: 'left',
               transform: `translateY(${scrollY * 0.04}px)`,
               willChange: 'transform',
-              paddingRight: '80px',
+              paddingRight: isMobile ? 0 : '80px',
+              gridColumn: isMobile ? 3 : undefined,
+              gridRow: isMobile ? 2 : undefined,
             }}>
               {g.b ? (
                 <div style={{
                   fontFamily: 'Newsreader, serif',
                   fontWeight: 400,
-                  fontSize: '14px',
+                  fontSize: isMobile ? '13px' : '14px',
                   lineHeight: 1.6,
                   color: '#E8E5E0',
                   opacity: getOpacity('b', g.event_date),
                   transition: 'opacity 300ms ease',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
-                  paddingLeft: '16px',
+                  paddingLeft: isMobile ? 0 : '16px',
                 }}>
                   {g.b.content}
                 </div>
@@ -157,7 +167,7 @@ export default function Mirror() {
                   fontSize: '10px',
                   color: '#333',
                   opacity: 0.3,
-                  paddingLeft: '16px',
+                  paddingLeft: isMobile ? 0 : '16px',
                 }}>
                   —
                 </div>

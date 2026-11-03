@@ -1,4 +1,5 @@
 import type { Entry } from '../types/entry'
+import { useIsMobile } from '../lib/useIsMobile'
 
 interface EntryListProps {
   entries: Entry[]
@@ -8,6 +9,7 @@ interface EntryListProps {
 }
 
 export default function EntryList({ entries, variant, viewer, onMakeVisible }: EntryListProps) {
+  const isMobile = useIsMobile()
   if (entries.length === 0) return null
 
   // memory variant 走旧逻辑兼容 (但这一轮不动 memory)
@@ -72,7 +74,7 @@ export default function EntryList({ entries, variant, viewer, onMakeVisible }: E
         {/* 时间戳 */}
         <div style={{
           fontFamily: 'JetBrains Mono, monospace',
-          fontSize: '10px',
+          fontSize: isMobile ? '9px' : '10px',
           color: '#E8E5E0',
           opacity: 0.5,
           marginBottom: '4px',
@@ -88,7 +90,7 @@ export default function EntryList({ entries, variant, viewer, onMakeVisible }: E
           fontFamily: 'Newsreader, serif',
           fontStyle,
           fontWeight: 400,
-          fontSize: '14px',
+          fontSize: isMobile ? '13px' : '14px',
           lineHeight: 1.55,
           color: '#E8E5E0',
           whiteSpace: 'pre-wrap',
@@ -154,7 +156,7 @@ export default function EntryList({ entries, variant, viewer, onMakeVisible }: E
             style={{
               width: '100%',
               display: 'grid',
-              gridTemplateColumns: '45% 10% 45%',
+              gridTemplateColumns: isMobile ? '1fr 20px 1fr' : '45% 10% 45%',
               gap: '0',
               alignItems: 'start',
             }}
@@ -167,8 +169,8 @@ export default function EntryList({ entries, variant, viewer, onMakeVisible }: E
             {/* 中轴虚空 */}
             <div />
 
-            {/* 右轨: 仅当是 b 时渲染,否则留空保留位置;加 paddingRight 80px 避让 Nav */}
-            <div style={{ width: '100%', paddingRight: '80px' }}>
+            {/* 右轨: 仅当是 b 时渲染,否则留空保留位置;电脑上加 paddingRight 80px 避让 Nav */}
+            <div style={{ width: '100%', paddingRight: isMobile ? 0 : '80px' }}>
               {!isA && renderEntry(entry, 'b')}
             </div>
           </div>

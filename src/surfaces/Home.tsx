@@ -125,7 +125,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-ink-bg">
+    <div
+      className="min-h-screen flex items-center justify-center bg-ink-bg"
+      onClick={() => inputRef.current?.focus()}
+    >
       <input
         ref={inputRef}
         type="text"
@@ -137,6 +140,9 @@ export default function Home() {
           animation: shaking ? 'shake 200ms ease-in-out' : 'none',
         }}
         autoComplete="off"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
       />
     </div>
   )

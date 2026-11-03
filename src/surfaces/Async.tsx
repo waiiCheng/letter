@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Nav from '../primitives/Nav'
 import AsyncEntryBox from '../primitives/AsyncEntryBox'
+import { useIsMobile } from '../lib/useIsMobile'
 import { readAsyncEntries, publishAsyncEntry, type AsyncEntry, type AsyncAuthor } from '../actions/asyncActions'
 
 const ASYNC_A_KEY = 'letter_a_identity'
@@ -21,6 +22,7 @@ export default function Async() {
   const [viewer, setViewer] = useState<AsyncAuthor>('b')
   const [entries, setEntries] = useState<AsyncEntry[]>([])
   const [mounted, setMounted] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 50)
@@ -74,10 +76,10 @@ export default function Async() {
     >
       <Nav />
 
-      {/* 顶部居中 a/b toggle - 始终显示 */}
+      {/* 顶部居中 a/b toggle - 始终显示 (手机上导航占满顶部, 下移避让) */}
       <div style={{
         position: 'fixed',
-        top: '24px',
+        top: isMobile ? '68px' : '24px',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 5,
@@ -167,7 +169,7 @@ export default function Async() {
       {unlockedPage !== viewer && (
         <div style={{
           position: 'fixed',
-          top: '60px',
+          top: isMobile ? '100px' : '60px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 5,
@@ -189,12 +191,13 @@ export default function Async() {
         </div>
       )}
 
-      <div className="pt-24 pb-32" style={{ margin: '0 auto', maxWidth: '1100px', padding: '6rem 24px 8rem 24px', position: 'relative', paddingTop: '180px' }}>
+      <div className="pt-24 pb-32" style={{ margin: '0 auto', maxWidth: '1100px', padding: '6rem 24px 8rem 24px', position: 'relative', paddingTop: isMobile ? '240px' : '180px' }}>
 
         <div style={{
           position: 'absolute',
-          top: '6rem',
+          top: isMobile ? '140px' : '6rem',
           left: '24px',
+          right: isMobile ? '24px' : undefined,
           maxWidth: '440px',
         }}>
           {unlockedPage === viewer && <AsyncEntryBox author={viewer} onSubmit={refresh} />}
@@ -209,7 +212,7 @@ export default function Async() {
             <div
               key={entry.id}
               style={{
-                maxWidth: '440px',
+                maxWidth: isMobile ? '82%' : '440px',
                 marginLeft: isPrivate ? 0 : 'auto',
                 marginBottom: '48px',
                 opacity: isPrivate && !isMine ? 0 : 1,
